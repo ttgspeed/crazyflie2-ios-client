@@ -55,5 +55,7 @@
 @property (weak, nonatomic) IBOutlet UILabel *labelPitch2;
 @property (weak, nonatomic) IBOutlet UILabel *labelYaw2;
 
+-(IBAction) biasLock;
+
 
 @end

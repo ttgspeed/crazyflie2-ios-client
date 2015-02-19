@@ -204,6 +204,7 @@
     if (leftJoystick.activated && rightJoystick.activated) {
         self.unlockLabel.hidden = true;
         locked = NO;
+        self.biasLocked = TRUE;
     } else if (!leftJoystick.activated && !rightJoystick.activated) {
         self.unlockLabel.hidden = false;
         locked = YES;
@@ -379,6 +380,7 @@
 
 -(IBAction) biasLock:(id)sender
 {
+    NSLog(@"Zeroing...");
     self.biasLocked = true;
 }
 
@@ -422,36 +424,24 @@
         
         commanderPacket.header = 0x30;
         
-        /*if (LINEAR_PR) {
-            commanderPacket.pitch = self.biasPitch + jsPitch*-1*pitchRate;
-            commanderPacket.roll = self.biasRoll + jsRoll*pitchRate;
-        } else {
-            commanderPacket.pitch = self.biasPitch + pow(jsPitch, 2) * -1 * pitchRate * ((jsPitch>0)?1:-1);
-            commanderPacket.roll = self.biasRoll + pow(jsRoll, 2) * pitchRate * ((jsRoll>0)?1:-1);
-        }
-        
-        commanderPacket.yaw = self.biasYaw + (jsYaw * yawRate);*/
-        
-        //commanderPacket.yaw = 0;
-        
         CMDeviceMotion *deviceMotion = self.motionManager.deviceMotion;
         if(deviceMotion == nil)
             return;
         
         CMAttitude *attitude = deviceMotion.attitude;
         
-        if (LINEAR_PR) {
-            commanderPacket.roll = (attitude.pitch)*-1*5;
-            commanderPacket.pitch = (attitude.roll)*5;
+        /*if (LINEAR_PR) {
+            commanderPacket.roll = 4+(attitude.pitch)*-1*5;
+            commanderPacket.pitch = 1+(attitude.roll)*5;
         } else {
-            commanderPacket.roll = pow((attitude.pitch), 2) * -1 * 5 * (((attitude.pitch)>0)?1:-1);
-            commanderPacket.pitch = pow((attitude.roll), 2) * 5  * (((attitude.roll)>0)?1:-1);
-        }
-        commanderPacket.yaw = self.biasYaw + (attitude.yaw * 20);
-        
-        /*commanderPacket.pitch = 10+(attitude.roll*24);
-         commanderPacket.roll = 12+(attitude.pitch*24);
-         commanderPacket.yaw = 15+(jsYaw * yawRate);*/
+            commanderPacket.roll = 4+pow((attitude.pitch), 2) * -1 * 5 * (((attitude.pitch)>0)?1:-1);
+            commanderPacket.pitch = 1+pow((attitude.roll), 2) * 5  * (((attitude.roll)>0)?1:-1);
+        }*/
+         //commanderPacket.yaw = self.biasYaw + (attitude.yaw * 20);
+    
+         commanderPacket.pitch = 1+((-1*(attitude.roll*15))-self.biasPitch);
+         commanderPacket.roll = 4+((attitude.pitch*15)-self.biasRoll);
+         commanderPacket.yaw = 15+(jsYaw * yawRate);
         
         if(self.isHovering == FALSE)
         {
@@ -477,8 +467,8 @@
         if(self.biasLocked == TRUE)
         {
             NSLog(@"Locking Bias");
-            self.biasPitch = commanderPacket.pitch;
-            self.biasRoll = commanderPacket.roll;
+            self.biasPitch = (-1*(attitude.roll*15)); //commanderPacket.pitch;
+            self.biasRoll = (attitude.pitch*15); //commanderPacket.roll;
             self.biasYaw = commanderPacket.yaw;
             
             self.labelPitch.text = [NSString stringWithFormat:@"%f",commanderPacket.pitch];
