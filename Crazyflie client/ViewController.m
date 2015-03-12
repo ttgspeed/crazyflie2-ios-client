@@ -43,6 +43,7 @@
     bool sent;
     
     bool locked;
+    bool zeroyaw;
     
     float pitchRate;
     float yawRate;
@@ -365,17 +366,37 @@
 
 -(IBAction) enableAutohover:(id)sender
 {
+    
+    NSData *data;
+    
+    struct __attribute__((packed)) {
+        uint8_t header;
+        uint8_t ahParam;
+        uint8_t ahValue;
+    } commanderPacket;
+    
+    commanderPacket.header = 0x22; //channel and port value
+    commanderPacket.ahParam = 10; //autohover parameter
+    
     UISwitch *ah = (UISwitch *)sender;
     if([ah isOn])
     {
         NSLog(@"Autohover enabled!");
         self.isHovering = TRUE;
+        
+        commanderPacket.ahValue = 1;
     }
     else
     {
         NSLog(@"Autohover disabled!");
         self.isHovering = FALSE;
+        
+        commanderPacket.ahValue = 0;
     }
+    
+    data = [NSData dataWithBytes:&commanderPacket length:sizeof(commanderPacket)];
+    
+    [_connectingPeritheral writeValue:data forCharacteristic:_crtpCharacteristic type:CBCharacteristicWriteWithResponse];
 }
 
 -(IBAction) biasLock:(id)sender
@@ -419,7 +440,6 @@
     jsThrust = joysticks[mode2axis[controlMode-1][3]];
     
     if (sent) {
-        //NSLog(@"Send commander!");
         NSData *data;
         
         commanderPacket.header = 0x30;
@@ -429,19 +449,10 @@
             return;
         
         CMAttitude *attitude = deviceMotion.attitude;
-        
-        /*if (LINEAR_PR) {
-            commanderPacket.roll = 4+(attitude.pitch)*-1*5;
-            commanderPacket.pitch = 1+(attitude.roll)*5;
-        } else {
-            commanderPacket.roll = 4+pow((attitude.pitch), 2) * -1 * 5 * (((attitude.pitch)>0)?1:-1);
-            commanderPacket.pitch = 1+pow((attitude.roll), 2) * 5  * (((attitude.roll)>0)?1:-1);
-        }*/
-         //commanderPacket.yaw = self.biasYaw + (attitude.yaw * 20);
     
-         commanderPacket.pitch = 1+((-1*(attitude.roll*15))-self.biasPitch);
-         commanderPacket.roll = 4+((attitude.pitch*15)-self.biasRoll);
-         commanderPacket.yaw = 15+(jsYaw * yawRate);
+        commanderPacket.pitch = 0+((-1*(attitude.roll*15))-self.biasPitch); //1
+        commanderPacket.roll = 0+((attitude.pitch*15)-self.biasRoll); //4
+        commanderPacket.yaw = 0+(jsYaw * yawRate); //15
         
         if(self.isHovering == FALSE)
         {
@@ -457,12 +468,12 @@
             self.lastThrottle = thrust;
         }
         else{
-            commanderPacket.thrust = self.lastThrottle;
+            commanderPacket.thrust = 32767;
         }
         
         self.labelPitch2.text = [NSString stringWithFormat:@"%f",commanderPacket.pitch];
         self.labelRoll2.text = [NSString stringWithFormat:@"%f",commanderPacket.roll];
-        self.labelYaw2.text = [NSString stringWithFormat:@"%f",commanderPacket.yaw];
+        self.labelYaw2.text = [NSString stringWithFormat:@"%f",commanderPacket.thrust];
         
         if(self.biasLocked == TRUE)
         {
