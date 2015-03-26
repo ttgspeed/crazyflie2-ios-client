@@ -157,17 +157,27 @@
     self.thrustSensitivity.text = [[sensitivity valueForKey:@"maxThrust"] stringValue];
     self.yawSensitivity.text = [[sensitivity valueForKey:@"yawRate"] stringValue];
     
+    self.rollBias.text = [[sensitivity valueForKey:@"rollBias"] stringValue];
+    self.pitchBias.text = [[sensitivity valueForKey:@"pitchBias"] stringValue];
+    self.yawBias.text = [[sensitivity valueForKey:@"yawBias"] stringValue];
+
+    self.rollBias.enabled = YES;
+    self.pitchBias.enabled = YES;
+    self.yawBias.enabled = YES;
+    
     switch (self.sensitivitySelector.selectedSegmentIndex) {
         case 0:
         case 1:
             self.pitchrollSensitivity.enabled = NO;
             self.thrustSensitivity.enabled = NO;
             self.yawSensitivity.enabled = NO;
+            //self.rollBias.enabled = NO;
             break;
         case 2:
             self.pitchrollSensitivity.enabled = YES;
             self.thrustSensitivity.enabled = YES;
             self.yawSensitivity.enabled = YES;
+            //self.rollBias.enabled = YES;
             break;
     }
 }
@@ -192,6 +202,10 @@
         NSInteger yawRate = [self.yawSensitivity.text integerValue];
         NSInteger maxThrust = [self.thrustSensitivity.text integerValue];
         
+        NSInteger rollBias = [self.rollBias.text integerValue];
+        NSInteger pitchBias = [self.pitchBias.text integerValue];
+        NSInteger yawBias = [self.yawBias.text integerValue];
+        
         if (pitchRate<0)
             pitchRate = 0;
         if (pitchRate>80)
@@ -210,9 +224,16 @@
         self.yawSensitivity.text = [NSString stringWithFormat:@"%ld", (long)yawRate];
         self.thrustSensitivity.text = [NSString stringWithFormat:@"%ld", (long)maxThrust];
         
+        self.rollBias.text = [NSString stringWithFormat:@"%ld", (long)rollBias];
+        self.pitchBias.text = [NSString stringWithFormat:@"%ld", (long)pitchBias];
+        self.yawBias.text = [NSString stringWithFormat:@"%ld", (long)yawBias];
+        
         NSDictionary * customSensitivity = @{@"pitchRate": [NSNumber numberWithLong:pitchRate],
                                              @"yawRate": [NSNumber numberWithLong:yawRate],
-                                             @"maxThrust": [NSNumber numberWithLong:maxThrust]};
+                                             @"maxThrust": [NSNumber numberWithLong:maxThrust],
+                                             @"rollBias": [NSNumber numberWithLong:rollBias],
+                                             @"pitchBias": [NSNumber numberWithLong:pitchBias],
+                                             @"yawBias": [NSNumber numberWithLong:yawBias]};
 
         [self.sensitivities setValue:customSensitivity forKey:@"custom"];
     }

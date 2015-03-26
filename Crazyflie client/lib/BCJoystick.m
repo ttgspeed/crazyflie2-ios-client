@@ -113,6 +113,7 @@
 
 - (void) touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event
 {
+    _count = _count + 1;
     _activated = true;
     
     UITouch *touch= [[event touchesForView:self] anyObject];
@@ -205,11 +206,15 @@
 
 - (void) touchesEnded:(NSSet *)touches withEvent:(UIEvent *)event
 {
+    NSLog(@"touchEnded called");
+
     [self cancel];
+    
 }
 
 - (void) cancel
 {
+    
     if (_activated == NO)
         return;
     

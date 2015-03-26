@@ -34,6 +34,7 @@
 
 @property float deadbandX;
 @property float deadbandY;
+@property int count;
 
 @property BOOL positiveY;
 

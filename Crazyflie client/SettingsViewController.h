@@ -32,6 +32,13 @@ double gyroZ;
 @property (weak, nonatomic) IBOutlet UITextField *pitchrollSensitivity;
 @property (weak, nonatomic) IBOutlet UITextField *thrustSensitivity;
 @property (weak, nonatomic) IBOutlet UITextField *yawSensitivity;
+
+
+@property (weak, nonatomic) IBOutlet UITextField *rollBias;
+@property (weak, nonatomic) IBOutlet UITextField *pitchBias;
+@property (weak, nonatomic) IBOutlet UITextField *yawBias;
+
+
 @property (weak, nonatomic) IBOutlet UISegmentedControl *sensitivitySelector;
 @property (weak, nonatomic) IBOutlet UISegmentedControl *controlModeSelector;
 

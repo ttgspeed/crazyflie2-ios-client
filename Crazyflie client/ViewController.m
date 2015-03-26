@@ -41,13 +41,16 @@
     bool canBluetooth;
     bool isScanning;
     bool sent;
+    bool wasUnlocked;
     
     bool locked;
-    bool zeroyaw;
     
     float pitchRate;
     float yawRate;
     float maxThrust;
+    float rollBias;
+    float pitchBias;
+    float yawBias;
     int controlMode;
     
     enum {stateIdle, stateScanning, stateConnecting, stateConnected} state;
@@ -129,10 +132,6 @@
     }
     
     CMAttitude *attitude = deviceMotion.attitude;
-    
-    /*self.labelRoll.text = [NSString stringWithFormat:@"%f",attitude.roll];
-    self.labelPitch.text = [NSString stringWithFormat:@"%f",attitude.pitch];
-    self.labelYaw.text = [NSString stringWithFormat:@"%f",attitude.yaw];*/
 }
 
 - (void) loadDefault
@@ -158,6 +157,12 @@
 
 - (void) updateSettings: (NSUserDefaults*) defaults
 {
+
+    
+    
+    
+    
+    
     static const NSString *mode2str[4][4] = {{@"Yaw",  @"Pitch",  @"Roll", @"Thrust"},
                                              {@"Yaw",  @"Thrust", @"Roll", @"Pitch"},
                                              {@"Roll", @"Pitch",  @"Yaw",  @"Thrust"},
@@ -172,6 +177,10 @@
     pitchRate = [(NSNumber*)[sensitivity valueForKey:@"pitchRate"] floatValue];
     yawRate = [(NSNumber*)[sensitivity valueForKey:@"yawRate"] floatValue];
     maxThrust = [(NSNumber*)[sensitivity valueForKey:@"maxThrust"] floatValue];
+    
+    rollBias = [(NSNumber*)[sensitivity valueForKey:@"rollBias"] floatValue];
+    pitchBias = [(NSNumber*)[sensitivity valueForKey:@"pitchBias"] floatValue];
+    yawBias = [(NSNumber*)[sensitivity valueForKey:@"yawBias"] floatValue];
     
     leftJoystick.hLabel.text = [mode2str[controlMode-1][0] copy];
     leftJoystick.vLabel.text = [mode2str[controlMode-1][1] copy];
@@ -206,10 +215,29 @@
         self.unlockLabel.hidden = true;
         locked = NO;
         self.biasLocked = TRUE;
+        wasUnlocked = true;
+        
+        [self enableAutoHover:false];
     } else if (!leftJoystick.activated && !rightJoystick.activated) {
         self.unlockLabel.hidden = false;
+        
         locked = YES;
+        wasUnlocked = false;
+        
+        [self enableAutoHover:false];
     }
+    else if (leftJoystick.activated && !rightJoystick.activated)
+    {
+        locked = NO;
+        
+        if(wasUnlocked)
+            [self enableAutoHover:true];
+    }
+}
+
+- (void) sampleFuction
+{
+    
 }
 
 - (void)didReceiveMemoryWarning
@@ -364,34 +392,46 @@
     [_connectButton setTitle:@"Disconnect" forState:UIControlStateNormal];
 }
 
--(IBAction) enableAutohover:(id)sender
+-(IBAction) hoverToggle:(id)sender
 {
-    
+    UISwitch *ah = (UISwitch *)sender;
+    if([ah isOn])
+    {
+        [self enableAutoHover:true];
+    }
+    else
+    {
+        [self enableAutoHover:false];
+    }
+}
+
+- (void)enableAutoHover:(bool)enableHover
+{
     NSData *data;
     
     struct __attribute__((packed)) {
         uint8_t header;
-        uint8_t ahParam;
-        uint8_t ahValue;
+        uint8_t param;
+        uint8_t param1;
     } commanderPacket;
     
-    commanderPacket.header = 0x22; //channel and port value
-    commanderPacket.ahParam = 10; //autohover parameter
-    
-    UISwitch *ah = (UISwitch *)sender;
-    if([ah isOn])
+    if(enableHover)
     {
         NSLog(@"Autohover enabled!");
         self.isHovering = TRUE;
         
-        commanderPacket.ahValue = 1;
+        commanderPacket.header = 0x22;
+        commanderPacket.param = 10;
+        commanderPacket.param1 = 1;
     }
     else
     {
         NSLog(@"Autohover disabled!");
         self.isHovering = FALSE;
         
-        commanderPacket.ahValue = 0;
+        commanderPacket.header = 0x22;
+        commanderPacket.param = 10;
+        commanderPacket.param1 = 0;
     }
     
     data = [NSData dataWithBytes:&commanderPacket length:sizeof(commanderPacket)];
@@ -407,6 +447,14 @@
 
 -(void) sendCommander: (NSTimer*)timer
 {
+    
+    if (leftJoystick.activated)
+    {
+        NSLog(@"pressed");
+    }
+    
+    
+    
     struct __attribute__((packed)) {
         uint8_t header;
         float roll;
@@ -416,7 +464,7 @@
     } commanderPacket;
     // Mode sorted by pitch, roll, yaw, thrust versus lx, ly, rx, ry
     static const int mode2axis[4][4] = {{1, 2, 0, 3},
-                                        {3, 2, 0, 1},
+                                        {1, 0, 2, 3},
                                         {1, 0, 2, 3},
                                         {3, 0, 2, 1}};
     float joysticks[4];
@@ -440,6 +488,7 @@
     jsThrust = joysticks[mode2axis[controlMode-1][3]];
     
     if (sent) {
+        //NSLog(@"Send commander!");
         NSData *data;
         
         commanderPacket.header = 0x30;
@@ -449,14 +498,17 @@
             return;
         
         CMAttitude *attitude = deviceMotion.attitude;
-    
-        commanderPacket.pitch = 0+((-1*(attitude.roll*15))-self.biasPitch); //1
-        commanderPacket.roll = 0+((attitude.pitch*15)-self.biasRoll); //4
-        commanderPacket.yaw = 0+(jsYaw * yawRate); //15
+        
+        
+        commanderPacket.pitch = ((-1*(attitude.roll*15))-self.biasPitch)+pitchBias; //-7
+        commanderPacket.roll = rollBias+((attitude.pitch*15)-self.biasRoll);
+        commanderPacket.yaw = (jsYaw * yawRate)+yawBias; //+15
+        
+        
+        int thrust;
         
         if(self.isHovering == FALSE)
         {
-            int thrust;
             if (LINEAR_THRUST) {
                 thrust = jsThrust*65535*(maxThrust/100);
             } else {
@@ -467,13 +519,16 @@
             commanderPacket.thrust = thrust;
             self.lastThrottle = thrust;
         }
+        
         else{
-            commanderPacket.thrust = 32767;
+            commanderPacket.thrust = 32597;
         }
+        
+        self.lastThrottle = thrust;
         
         self.labelPitch2.text = [NSString stringWithFormat:@"%f",commanderPacket.pitch];
         self.labelRoll2.text = [NSString stringWithFormat:@"%f",commanderPacket.roll];
-        self.labelYaw2.text = [NSString stringWithFormat:@"%f",commanderPacket.thrust];
+        self.labelYaw2.text = [NSString stringWithFormat:@"%f",commanderPacket.yaw];
         
         if(self.biasLocked == TRUE)
         {

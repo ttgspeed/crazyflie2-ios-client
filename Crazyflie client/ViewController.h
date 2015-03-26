@@ -35,6 +35,7 @@
 @property (weak, nonatomic) IBOutlet UISwitch *autoHover;
 
 @property (nonatomic) BOOL isHovering;
+@property (nonatomic) BOOL hovering;
 
 @property (nonatomic) BOOL biasLocked;
 @property (nonatomic, assign) float biasRoll;
@@ -56,6 +57,7 @@
 @property (weak, nonatomic) IBOutlet UILabel *labelYaw2;
 
 -(IBAction) biasLock;
+- (void)enableAutoHover:(bool)enableHover;
 
 
 @end
