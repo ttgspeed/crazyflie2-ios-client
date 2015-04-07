@@ -206,7 +206,7 @@
 
 - (void) touchesEnded:(NSSet *)touches withEvent:(UIEvent *)event
 {
-    NSLog(@"touchEnded called");
+    //NSLog(@"touchEnded called");
 
     [self cancel];
     

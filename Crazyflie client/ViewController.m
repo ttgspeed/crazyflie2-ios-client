@@ -42,6 +42,10 @@
     bool isScanning;
     bool sent;
     bool wasUnlocked;
+    bool hovering;
+    bool sink;
+    bool sinking;
+    bool skip;
     
     bool locked;
     
@@ -51,7 +55,10 @@
     float rollBias;
     float pitchBias;
     float yawBias;
+    int sinkingThrust;
     int controlMode;
+    int count;
+    int sentinal;
     
     enum {stateIdle, stateScanning, stateConnecting, stateConnected} state;
     
@@ -94,6 +101,9 @@
     sent = NO;
     state = stateIdle;
     locked = YES;
+    sinking = false;
+    sink = false;
+    hovering = false;
     
     //Init button border color
     _connectButton.layer.borderColor = [_connectButton tintColor].CGColor;
@@ -212,26 +222,42 @@
 -(void) joystickTouch:(BCJoystick *)jostick
 {
     if (leftJoystick.activated && rightJoystick.activated) {
+        NSLog(@"both pressed");
         self.unlockLabel.hidden = true;
         locked = NO;
         self.biasLocked = TRUE;
         wasUnlocked = true;
         
-        [self enableAutoHover:false];
+        if (hovering)
+        {
+            sink = true;
+            hovering = false;
+        }
+        skip = true;
+       [self enableAutoHover:false];
+
     } else if (!leftJoystick.activated && !rightJoystick.activated) {
         self.unlockLabel.hidden = false;
-        
+        NSLog(@"neither pressed");
         locked = YES;
         wasUnlocked = false;
-        
-        [self enableAutoHover:false];
+        hovering = false;
+        sinking = false;
+        sink = false;
+        skip = true;
+       [self enableAutoHover:false];
     }
     else if (leftJoystick.activated && !rightJoystick.activated)
     {
+        NSLog(@"left pressed");
         locked = NO;
         
         if(wasUnlocked)
-            [self enableAutoHover:true];
+        {
+            skip = true;
+           [self enableAutoHover:true];
+          hovering = true;
+        }
     }
 }
 
@@ -448,10 +474,7 @@
 -(void) sendCommander: (NSTimer*)timer
 {
     
-    if (leftJoystick.activated)
-    {
-        NSLog(@"pressed");
-    }
+
     
     
     
@@ -463,6 +486,7 @@
         uint16_t thrust;
     } commanderPacket;
     // Mode sorted by pitch, roll, yaw, thrust versus lx, ly, rx, ry
+    //
     static const int mode2axis[4][4] = {{1, 2, 0, 3},
                                         {1, 0, 2, 3},
                                         {1, 0, 2, 3},
@@ -502,11 +526,15 @@
         
         commanderPacket.pitch = ((-1*(attitude.roll*15))-self.biasPitch)+pitchBias; //-7
         commanderPacket.roll = rollBias+((attitude.pitch*15)-self.biasRoll);
-        commanderPacket.yaw = (jsYaw * yawRate)+yawBias; //+15
+        commanderPacket.yaw = (jsRoll * yawRate)+yawBias; //+15
         
         
-        int thrust;
         
+        
+        
+        
+        int thrust = 0;
+        int temp;
         if(self.isHovering == FALSE)
         {
             if (LINEAR_THRUST) {
@@ -524,6 +552,64 @@
             commanderPacket.thrust = 32597;
         }
         
+        
+        //sets up the stuff needed to begin sinking after hover mode has ended
+        if (sink)
+        {
+            
+            sinkingThrust = 32597;
+            NSLog(@"sending sink");
+            commanderPacket.thrust = sinkingThrust;
+            sinking = true;
+            sentinal = 30;
+            sink = false;
+        }
+        temp = thrust;
+        
+        //when hover ends the thrust will slowly decrease from neutral thrust until it reaches 10000 or the thrust from the user is greater
+        if (sinking)
+        {
+            if (thrust > sinkingThrust || sinkingThrust < 10000)
+            {
+                sinking = FALSE;
+            }
+            else{
+                
+                //in theory we can just send anything less than neutral and it will reach the floor one way or the other
+                //this seems to work a thousand times better
+                sinkingThrust = 40000;
+                commanderPacket.thrust = sinkingThrust;
+                NSLog(@"sinking");
+                
+                /*
+                
+                //causes it to sink slowly for the first 1.5 seconds then increase sink speed rapidly
+                if (sentinal > 0)
+                {
+                    sentinal = sentinal - 1;
+                    sinkingThrust = sinkingThrust - 4;
+                    commanderPacket.thrust = sinkingThrust;
+                    NSLog(@"sinking slow");
+                }
+                else{
+                    
+                    sinkingThrust = sinkingThrust - 50;
+                    commanderPacket.thrust = sinkingThrust;
+                    NSLog(@"sinking fast");
+
+                    
+                }
+                 
+                
+                //decreases sinking thrust by a flat 50 every tick
+                sinkingThrust = sinkingThrust - 50;
+                commanderPacket.thrust = sinkingThrust;
+                NSLog(@"sinking");
+*/
+            }
+        }
+        
+        
         self.lastThrottle = thrust;
         
         self.labelPitch2.text = [NSString stringWithFormat:@"%f",commanderPacket.pitch];
@@ -537,6 +623,8 @@
             self.biasRoll = (attitude.pitch*15); //commanderPacket.roll;
             self.biasYaw = commanderPacket.yaw;
             
+            
+            
             self.labelPitch.text = [NSString stringWithFormat:@"%f",commanderPacket.pitch];
             self.labelRoll.text = [NSString stringWithFormat:@"%f",commanderPacket.roll];
             self.labelYaw.text = [NSString stringWithFormat:@"%f",commanderPacket.yaw];
@@ -544,10 +632,28 @@
             self.biasLocked = false;
         }
         
+        
+        /*
+        
         data = [NSData dataWithBytes:&commanderPacket length:sizeof(commanderPacket)];
         
         [_connectingPeritheral writeValue:data forCharacteristic:_crtpCharacteristic type:CBCharacteristicWriteWithResponse];
         sent = NO;
+        
+        */
+        
+        if (!skip)
+        {
+            data = [NSData dataWithBytes:&commanderPacket length:sizeof(commanderPacket)];
+            
+            [_connectingPeritheral writeValue:data forCharacteristic:_crtpCharacteristic type:CBCharacteristicWriteWithResponse];
+        }
+        else {NSLog(@"skipped");}
+        
+        sent = NO;
+        skip = false;
+        
+        
     } else {
         //NSLog(@"Missed commander update!");
     }
