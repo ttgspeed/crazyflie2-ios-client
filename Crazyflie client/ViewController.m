@@ -168,15 +168,7 @@
 - (void) updateSettings: (NSUserDefaults*) defaults
 {
 
-    
-    
-    
-    
-    
-    static const NSString *mode2str[4][4] = {{@"Yaw",  @"Pitch",  @"Roll", @"Thrust"},
-                                             {@"Yaw",  @"Thrust", @"Roll", @"Pitch"},
-                                             {@"Roll", @"Pitch",  @"Yaw",  @"Thrust"},
-                                             {@"Roll", @"Thrust", @"Yaw",  @"Pitch"}};
+    static const NSString *mode2str[4] = {@"Yaw",  @"",  @"", @"Thrust"};
     
     controlMode = [defaults doubleForKey:@"controlMode"];
     NSLog(@"controlMode %d", controlMode);
@@ -192,10 +184,10 @@
     pitchBias = [(NSNumber*)[sensitivity valueForKey:@"pitchBias"] floatValue];
     yawBias = [(NSNumber*)[sensitivity valueForKey:@"yawBias"] floatValue];
     
-    leftJoystick.hLabel.text = [mode2str[controlMode-1][0] copy];
-    leftJoystick.vLabel.text = [mode2str[controlMode-1][1] copy];
-    rightJoystick.hLabel.text = [mode2str[controlMode-1][2] copy];
-    rightJoystick.vLabel.text = [mode2str[controlMode-1][3] copy];
+    leftJoystick.hLabel.text = [mode2str[0] copy];
+    leftJoystick.vLabel.text = [mode2str[1] copy];
+    rightJoystick.hLabel.text = [mode2str[2] copy];
+    rightJoystick.vLabel.text = [mode2str[3] copy];
     
     leftJoystick.deadbandX = 0;
     rightJoystick.deadbandX = 0;
@@ -222,8 +214,9 @@
 -(void) joystickTouch:(BCJoystick *)jostick
 {
     if (leftJoystick.activated && rightJoystick.activated) {
-        NSLog(@"both pressed");
-        self.unlockLabel.hidden = true;
+        //NSLog(@"both pressed");
+        
+        self.unlockLabel.text = @"Remove right thumb to autohover";
         locked = NO;
         self.biasLocked = TRUE;
         wasUnlocked = true;
@@ -237,8 +230,9 @@
        [self enableAutoHover:false];
 
     } else if (!leftJoystick.activated && !rightJoystick.activated) {
-        self.unlockLabel.hidden = false;
-        NSLog(@"neither pressed");
+        //NSLog(@"neither pressed");
+        
+        self.unlockLabel.text = @"Place both thumbs to enable control";
         locked = YES;
         wasUnlocked = false;
         hovering = false;
@@ -249,7 +243,9 @@
     }
     else if (leftJoystick.activated && !rightJoystick.activated)
     {
-        NSLog(@"left pressed");
+        //NSLog(@"left pressed");
+        
+        self.unlockLabel.text = @"Autohover enabled";
         locked = NO;
         
         if(wasUnlocked)
@@ -487,12 +483,13 @@
     } commanderPacket;
     // Mode sorted by pitch, roll, yaw, thrust versus lx, ly, rx, ry
     //
-    static const int mode2axis[4][4] = {{1, 2, 0, 3},
+    /*static const int mode2axis[4][4] = {{1, 2, 0, 3},
                                         {1, 0, 2, 3},
                                         {1, 0, 2, 3},
-                                        {3, 0, 2, 1}};
+                                        {3, 0, 2, 1}};*/
+    
     float joysticks[4];
-    float jsPitch, jsRoll, jsYaw, jsThrust;
+    float jsYaw, jsThrust;
     
     if (locked == NO) {
         joysticks[0] = leftJoystick.x;
@@ -505,14 +502,10 @@
         joysticks[2] = 0;
         joysticks[3] = 0;
     }
-    
-    jsPitch  = joysticks[mode2axis[controlMode-1][0]];
-    jsRoll   = joysticks[mode2axis[controlMode-1][1]];
-    jsYaw    = joysticks[mode2axis[controlMode-1][2]];
-    jsThrust = joysticks[mode2axis[controlMode-1][3]];
+    jsYaw    = joysticks[0];
+    jsThrust = joysticks[3];
     
     if (sent) {
-        //NSLog(@"Send commander!");
         NSData *data;
         
         commanderPacket.header = 0x30;
@@ -526,12 +519,7 @@
         
         commanderPacket.pitch = ((-1*(attitude.roll*15))-self.biasPitch)+pitchBias; //-7
         commanderPacket.roll = rollBias+((attitude.pitch*15)-self.biasRoll);
-        commanderPacket.yaw = (jsRoll * yawRate)+yawBias; //+15
-        
-        
-        
-        
-        
+        commanderPacket.yaw = (jsYaw * yawRate)+yawBias; //+15
         
         int thrust = 0;
         int temp;
@@ -552,11 +540,9 @@
             commanderPacket.thrust = 32597;
         }
         
-        
         //sets up the stuff needed to begin sinking after hover mode has ended
         if (sink)
         {
-            
             sinkingThrust = 32597;
             NSLog(@"sending sink");
             commanderPacket.thrust = sinkingThrust;
@@ -574,38 +560,10 @@
                 sinking = FALSE;
             }
             else{
-                
                 //in theory we can just send anything less than neutral and it will reach the floor one way or the other
                 //this seems to work a thousand times better
                 sinkingThrust = 40000;
                 commanderPacket.thrust = sinkingThrust;
-                NSLog(@"sinking");
-                
-                /*
-                
-                //causes it to sink slowly for the first 1.5 seconds then increase sink speed rapidly
-                if (sentinal > 0)
-                {
-                    sentinal = sentinal - 1;
-                    sinkingThrust = sinkingThrust - 4;
-                    commanderPacket.thrust = sinkingThrust;
-                    NSLog(@"sinking slow");
-                }
-                else{
-                    
-                    sinkingThrust = sinkingThrust - 50;
-                    commanderPacket.thrust = sinkingThrust;
-                    NSLog(@"sinking fast");
-
-                    
-                }
-                 
-                
-                //decreases sinking thrust by a flat 50 every tick
-                sinkingThrust = sinkingThrust - 50;
-                commanderPacket.thrust = sinkingThrust;
-                NSLog(@"sinking");
-*/
             }
         }
         
@@ -619,8 +577,8 @@
         if(self.biasLocked == TRUE)
         {
             NSLog(@"Locking Bias");
-            self.biasPitch = (-1*(attitude.roll*15)); //commanderPacket.pitch;
-            self.biasRoll = (attitude.pitch*15); //commanderPacket.roll;
+            self.biasPitch = (-1*(attitude.roll*15));
+            self.biasRoll = (attitude.pitch*15);
             self.biasYaw = commanderPacket.yaw;
             
             
@@ -631,16 +589,6 @@
             
             self.biasLocked = false;
         }
-        
-        
-        /*
-        
-        data = [NSData dataWithBytes:&commanderPacket length:sizeof(commanderPacket)];
-        
-        [_connectingPeritheral writeValue:data forCharacteristic:_crtpCharacteristic type:CBCharacteristicWriteWithResponse];
-        sent = NO;
-        
-        */
         
         if (!skip)
         {
@@ -666,7 +614,6 @@
               [error localizedDescription]);
         return;
     }
-    //NSLog(@"Value written");
     sent  = YES;
 }
 

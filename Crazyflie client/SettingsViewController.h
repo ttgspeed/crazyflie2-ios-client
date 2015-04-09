@@ -46,10 +46,6 @@ double gyroZ;
 @property (weak, nonatomic) IBOutlet UILabel *labelPitch;
 @property (weak, nonatomic) IBOutlet UILabel *labelYaw;
 
-@property (weak, nonatomic) IBOutlet UILabel *labelAccX;
-@property (weak, nonatomic) IBOutlet UILabel *labelAccY;
-@property (weak, nonatomic) IBOutlet UILabel *labelAccZ;
-
 //coremotion stuff
 @property (weak, nonatomic) IBOutlet UITextField *roll;
 

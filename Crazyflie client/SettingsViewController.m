@@ -29,8 +29,6 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     
-    //self.myLabel.text
-    
     //Init button border color
     _closeButton.layer.borderColor = [_closeButton tintColor].CGColor;
     
@@ -57,41 +55,6 @@
     [self.motionManager startDeviceMotionUpdatesUsingReferenceFrame: CMAttitudeReferenceFrameXArbitraryCorrectedZVertical];
     
     
-    
-    /* old/not working
-    accelX = 0;
-    accelY = 0;
-    accelZ = 0;
-    
-    gyroX = 0;
-    gyroY = 0;
-    gyroZ = 0;
-    
-    self.motionManager = [[CMMotionManager alloc] init];
-    self.motionManager.accelerometerUpdateInterval = .2;
-    self.motionManager.gyroUpdateInterval = .2;
-    
-    
-    [self.motionManager startAccelerometerUpdatesToQueue:[NSOperationQueue currentQueue]
-                                             withHandler:^(CMAccelerometerData  *accelerometerData, NSError *error) {
-                                                 [self outputAccelInfo:accelerometerData.acceleration];
-                                                 if(error){
-                                                     
-                                                     NSLog(@"%@", error);
-                                                 }
-                                             }];
-    
-    [self.motionManager startGyroUpdatesToQueue:[NSOperationQueue currentQueue]
-                                    withHandler:^(CMGyroData *gyroData, NSError *error) {
-                                        [self outputGyroInfo:gyroData.rotationRate];
-                                    }];
-
-    */
-    
-    
-    //end drone stuff
-    
-    
 
 }
 //Core Motion methods
@@ -110,11 +73,6 @@
     self.labelRoll.text = [NSString stringWithFormat:@"%f",attitude.roll];
     self.labelPitch.text = [NSString stringWithFormat:@"%f",attitude.pitch];
     self.labelYaw.text = [NSString stringWithFormat:@"%f",attitude.yaw];
-    
-    self.labelAccX.text = [NSString stringWithFormat:@"%f",userAcceleration.x];
-    self.labelAccY.text = [NSString stringWithFormat:@"%f",userAcceleration.y];
-    self.labelAccZ.text = [NSString stringWithFormat:@"%f",userAcceleration.z];
-    
 }
 
 
