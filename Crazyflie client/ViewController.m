@@ -214,23 +214,23 @@
 -(void) joystickTouch:(BCJoystick *)jostick
 {
     if (leftJoystick.activated && rightJoystick.activated) {
-        //NSLog(@"both pressed");
         
         self.unlockLabel.text = @"Remove right thumb to autohover";
         locked = NO;
         self.biasLocked = TRUE;
         wasUnlocked = true;
         
+        //if we were previously hovering, don't cut the thrust
         if (hovering)
         {
             sink = true;
             hovering = false;
         }
         skip = true;
+        
        [self enableAutoHover:false];
 
     } else if (!leftJoystick.activated && !rightJoystick.activated) {
-        //NSLog(@"neither pressed");
         
         self.unlockLabel.text = @"Place both thumbs to enable control";
         locked = YES;
@@ -243,7 +243,7 @@
     }
     else if (leftJoystick.activated && !rightJoystick.activated)
     {
-        //NSLog(@"left pressed");
+        //enable autohover if only left stick is activated
         
         self.unlockLabel.text = @"Autohover enabled";
         locked = NO;
@@ -431,31 +431,33 @@
 {
     NSData *data;
     
+    //form the param packet
     struct __attribute__((packed)) {
         uint8_t header;
         uint8_t param;
-        uint8_t param1;
+        uint8_t paramValue;
     } commanderPacket;
+    
+    //send packet to port 2 channel 2
+    commanderPacket.header = 0x22;
+    
+    //set the param we want to update
+    commanderPacket.param = 10;
     
     if(enableHover)
     {
         NSLog(@"Autohover enabled!");
         self.isHovering = TRUE;
-        
-        commanderPacket.header = 0x22;
-        commanderPacket.param = 10;
-        commanderPacket.param1 = 1;
+        commanderPacket.paramValue = 1;
     }
     else
     {
         NSLog(@"Autohover disabled!");
         self.isHovering = FALSE;
-        
-        commanderPacket.header = 0x22;
-        commanderPacket.param = 10;
-        commanderPacket.param1 = 0;
+        commanderPacket.paramValue = 0;
     }
     
+    //pack the data and ship it out
     data = [NSData dataWithBytes:&commanderPacket length:sizeof(commanderPacket)];
     
     [_connectingPeritheral writeValue:data forCharacteristic:_crtpCharacteristic type:CBCharacteristicWriteWithResponse];
@@ -463,17 +465,14 @@
 
 -(IBAction) biasLock:(id)sender
 {
+    //I'm not sure why this still exists
     NSLog(@"Zeroing...");
     self.biasLocked = true;
 }
 
 -(void) sendCommander: (NSTimer*)timer
 {
-    
-
-    
-    
-    
+    //form the command packet
     struct __attribute__((packed)) {
         uint8_t header;
         float roll;
@@ -481,6 +480,12 @@
         float yaw;
         uint16_t thrust;
     } commanderPacket;
+    
+    //set the port to 3 (no channel?)
+    commanderPacket.header = 0x30;
+    
+    //old joystick stuff that has been replaced but was kept for reference
+    
     // Mode sorted by pitch, roll, yaw, thrust versus lx, ly, rx, ry
     //
     /*static const int mode2axis[4][4] = {{1, 2, 0, 3},
@@ -508,18 +513,19 @@
     if (sent) {
         NSData *data;
         
-        commanderPacket.header = 0x30;
-        
+        //coremotion setup stuff
         CMDeviceMotion *deviceMotion = self.motionManager.deviceMotion;
         if(deviceMotion == nil)
             return;
         
+        //more coremotion setup stuff
         CMAttitude *attitude = deviceMotion.attitude;
         
         
-        commanderPacket.pitch = ((-1*(attitude.roll*15))-self.biasPitch)+pitchBias; //-7
+        //the values of roll and pitched are swapped since we are using the phone in a horizontal position
+        commanderPacket.pitch = ((-1*(attitude.roll*15))-self.biasPitch)+pitchBias;
         commanderPacket.roll = rollBias+((attitude.pitch*15)-self.biasRoll);
-        commanderPacket.yaw = (jsYaw * yawRate)+yawBias; //+15
+        commanderPacket.yaw = (jsYaw * yawRate)+yawBias;
         
         int thrust = 0;
         int temp;
@@ -537,6 +543,7 @@
         }
         
         else{
+            //set a less-than-neutral thrust so that we can fall back to this after hovering
             commanderPacket.thrust = 32597;
         }
         
@@ -567,9 +574,10 @@
             }
         }
         
-        
+        //store the throttle for reference purposes
         self.lastThrottle = thrust;
         
+        //update the labels so the pilot has some sort of visual indicator
         self.labelPitch2.text = [NSString stringWithFormat:@"%f",commanderPacket.pitch];
         self.labelRoll2.text = [NSString stringWithFormat:@"%f",commanderPacket.roll];
         self.labelYaw2.text = [NSString stringWithFormat:@"%f",commanderPacket.yaw];
@@ -581,8 +589,6 @@
             self.biasRoll = (attitude.pitch*15);
             self.biasYaw = commanderPacket.yaw;
             
-            
-            
             self.labelPitch.text = [NSString stringWithFormat:@"%f",commanderPacket.pitch];
             self.labelRoll.text = [NSString stringWithFormat:@"%f",commanderPacket.roll];
             self.labelYaw.text = [NSString stringWithFormat:@"%f",commanderPacket.yaw];
@@ -592,6 +598,7 @@
         
         if (!skip)
         {
+            //if we don't need to skip this packet, ship it out
             data = [NSData dataWithBytes:&commanderPacket length:sizeof(commanderPacket)];
             
             [_connectingPeritheral writeValue:data forCharacteristic:_crtpCharacteristic type:CBCharacteristicWriteWithResponse];
