@@ -10,14 +10,14 @@
 	<string>Crazyflie client</string>
 	<key>IDESourceControlProjectOriginsDictionary</key>
 	<dict>
-		<key>137A17175CBA9DAF70BA2C9298F1190E2050144C</key>
+		<key>7FD9AAD6BE0F5BB15920B7F3F6FFE80E022DD827</key>
 		<string>https://github.com/bitcraze/crazyflie2-ios-client.git</string>
 	</dict>
 	<key>IDESourceControlProjectPath</key>
 	<string>Crazyflie client.xcodeproj</string>
 	<key>IDESourceControlProjectRelativeInstallPathDictionary</key>
 	<dict>
-		<key>137A17175CBA9DAF70BA2C9298F1190E2050144C</key>
+		<key>7FD9AAD6BE0F5BB15920B7F3F6FFE80E022DD827</key>
 		<string>../..</string>
 	</dict>
 	<key>IDESourceControlProjectURL</key>
@@ -25,14 +25,14 @@
 	<key>IDESourceControlProjectVersion</key>
 	<integer>111</integer>
 	<key>IDESourceControlProjectWCCIdentifier</key>
-	<string>137A17175CBA9DAF70BA2C9298F1190E2050144C</string>
+	<string>7FD9AAD6BE0F5BB15920B7F3F6FFE80E022DD827</string>
 	<key>IDESourceControlProjectWCConfigurations</key>
 	<array>
 		<dict>
 			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
 			<string>public.vcs.git</string>
 			<key>IDESourceControlWCCIdentifierKey</key>
-			<string>137A17175CBA9DAF70BA2C9298F1190E2050144C</string>
+			<string>7FD9AAD6BE0F5BB15920B7F3F6FFE80E022DD827</string>
 			<key>IDESourceControlWCCName</key>
 			<string>crazyflie2-ios-client</string>
 		</dict>

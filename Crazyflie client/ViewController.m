@@ -5,7 +5,7 @@
  * +------+    / /_/ / / /_/ /__/ /  / /_/ / / /_/  __/
  *  ||  ||    /_____/_/\__/\___/_/   \__,_/ /___/\___/
  *
- * Crazyflie ios client
+ * Crazyflie iOS client
  *
  * Copyright (C) 2014 BitCraze AB
  *
