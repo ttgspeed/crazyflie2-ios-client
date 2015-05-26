@@ -28,6 +28,40 @@
 #import <CoreBluetooth/CoreBluetooth.h>
 #import "SettingsViewController.h"
 
+<<<<<<< HEAD
 @interface ViewController : UIViewController <SettingsProtocolDelegate>
+=======
+@interface ViewController : UIViewController <CBCentralManagerDelegate,
+                                              CBPeripheralDelegate,
+                                              SettingsProtocolDelegate>
+
+@property (weak, nonatomic) IBOutlet UISwitch *autoHover;
+
+@property (nonatomic) BOOL isHovering;
+@property (nonatomic) BOOL hovering;
+
+@property (nonatomic) BOOL biasLocked;
+@property (nonatomic, assign) float biasRoll;
+@property (nonatomic, assign) float biasPitch;
+@property (nonatomic, assign) float biasYaw;
+
+
+@property (nonatomic, assign) int lastThrottle;
+
+//attempting to initialize motionmanager
+@property (strong, nonatomic) CMMotionManager *motionManager;
+
+@property (weak, nonatomic) IBOutlet UILabel *labelRoll;
+@property (weak, nonatomic) IBOutlet UILabel *labelPitch;
+@property (weak, nonatomic) IBOutlet UILabel *labelYaw;
+
+@property (weak, nonatomic) IBOutlet UILabel *labelRoll2;
+@property (weak, nonatomic) IBOutlet UILabel *labelPitch2;
+@property (weak, nonatomic) IBOutlet UILabel *labelYaw2;
+
+-(IBAction) biasLock;
+- (void)enableAutoHover:(bool)enableHover;
+
+>>>>>>> merge_branch
 
 @end

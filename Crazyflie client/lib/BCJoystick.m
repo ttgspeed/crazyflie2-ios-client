@@ -113,6 +113,10 @@
 
 - (void) touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event
 {
+<<<<<<< HEAD
+=======
+    _count = _count + 1;
+>>>>>>> merge_branch
     _activated = true;
     
     UITouch *touch= [[event touchesForView:self] anyObject];
@@ -205,11 +209,22 @@
 
 - (void) touchesEnded:(NSSet *)touches withEvent:(UIEvent *)event
 {
+<<<<<<< HEAD
     [self cancel];
+=======
+    //NSLog(@"touchEnded called");
+
+    [self cancel];
+    
+>>>>>>> merge_branch
 }
 
 - (void) cancel
 {
+<<<<<<< HEAD
+=======
+    
+>>>>>>> merge_branch
     if (_activated == NO)
         return;
     

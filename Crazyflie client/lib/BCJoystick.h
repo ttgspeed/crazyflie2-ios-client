@@ -34,6 +34,10 @@
 
 @property float deadbandX;
 @property float deadbandY;
+<<<<<<< HEAD
+=======
+@property int count;
+>>>>>>> merge_branch
 
 @property BOOL positiveY;
 
